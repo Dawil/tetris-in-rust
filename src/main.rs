@@ -68,8 +68,12 @@ impl Shape {
 		let current_shape = self.current_shape();
 		let other_current_shape = shape.current_shape();
 		for cell in current_shape {
+			let x1 = cell.x + self.x;
+			let y1 = cell.y + self.y;
 			for other_cell in other_current_shape {
-				if cell.x == other_cell.x && cell.y == other_cell.y {
+				let x2 = other_cell.x + shape.x;
+				let y2 = other_cell.y + shape.y;
+				if x1 == x2 && y1 == y2 {
 					return true
 				}
 			}
@@ -85,9 +89,9 @@ impl Grid {
 	fn rotate_cursor(&mut self) {
 		self.shapes[self.cursor].rotate()
 	}
-	fn clashes(&self, shape: Shape) -> bool {
-		for other_shape in &self.shapes {
-			if shape.collides(&other_shape) {
+	fn clashes(&self, shape: &Shape) -> bool {
+		for i in 0..self.shapes.len() {
+			if i != self.cursor && shape.collides(&self.shapes[i]) {
 				return true
 			}
 		}
@@ -95,12 +99,21 @@ impl Grid {
 	}
 	fn move_right(&mut self) {
 		self.shapes[self.cursor].x += 1;
+		if self.clashes(&self.shapes[self.cursor]) {
+			self.shapes[self.cursor].x -= 1;
+		}
 	}
 	fn move_left(&mut self) {
 		self.shapes[self.cursor].x -= 1;
+		if self.clashes(&self.shapes[self.cursor]) {
+			self.shapes[self.cursor].x += 1;
+		}
 	}
 	fn move_down(&mut self) {
 		self.shapes[self.cursor].y += 1;
+		if self.clashes(&self.shapes[self.cursor]) {
+			self.shapes[self.cursor].y -= 1;
+		}
 	}
 	fn draw(
 		&mut self,
