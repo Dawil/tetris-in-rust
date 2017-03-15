@@ -2,6 +2,7 @@ extern crate piston;
 extern crate graphics;
 extern crate glutin_window;
 extern crate opengl_graphics;
+extern crate rand;
 
 use std::f64::consts::PI;
 
@@ -10,6 +11,9 @@ use piston::event_loop::*;
 use piston::input::*;
 use glutin_window::GlutinWindow as Window;
 use opengl_graphics::{ GlGraphics, OpenGL };
+
+static DEPTH:usize = 21;
+static WIDTH:usize = 15;
 
 struct App {
 	gl: GlGraphics,
@@ -29,7 +33,7 @@ impl App {
 	}
 	fn user_input(&mut self, button: &Button) {
 		match *button {
-			Button::Keyboard(Key::Space) => {
+			Button::Keyboard(Key::Up) => {
 				self.grid.rotate_cursor()
 			}
 			Button::Keyboard(Key::Right) => {
@@ -40,6 +44,9 @@ impl App {
 			}
 			Button::Keyboard(Key::Down) => {
 				self.grid.move_down();
+			},
+			Button::Keyboard(Key::Space) => {
+				self.grid.drop();
 			},
 			_ => {}
 		}
@@ -64,12 +71,24 @@ impl Shape {
 	fn rotate(&mut self) {
 		self.orientation = (self.orientation + 1) % self.cells.len();
 	}
+	fn lowest_y(&self) -> usize {
+		let mut y = 0;
+		for cell in self.current_shape() {
+			if cell.y > y {
+				y = cell.y;
+			}
+		}
+		y + self.y
+	}
 	fn collides(&self, shape: &Shape) -> bool {
 		let current_shape = self.current_shape();
 		let other_current_shape = shape.current_shape();
 		for cell in current_shape {
 			let x1 = cell.x + self.x;
 			let y1 = cell.y + self.y;
+			if y1 > DEPTH {
+				return true
+			}
 			for other_cell in other_current_shape {
 				let x2 = other_cell.x + shape.x;
 				let y2 = other_cell.y + shape.y;
@@ -86,6 +105,13 @@ struct Grid {
 	shapes: Vec<Shape>
 }
 impl Grid {
+	fn drop(&mut self) {
+		loop {
+			if !self.move_down() {
+				break;
+			}
+		}
+	}
 	fn rotate_cursor(&mut self) {
 		self.shapes[self.cursor].rotate()
 	}
@@ -95,25 +121,32 @@ impl Grid {
 				return true
 			}
 		}
-		false
+		shape.lowest_y() > DEPTH || false
 	}
 	fn move_right(&mut self) {
-		self.shapes[self.cursor].x += 1;
-		if self.clashes(&self.shapes[self.cursor]) {
-			self.shapes[self.cursor].x -= 1;
+		if self.shapes[self.cursor].x < WIDTH {
+			self.shapes[self.cursor].x += 1;
+			if self.clashes(&self.shapes[self.cursor]) {
+				self.shapes[self.cursor].x -= 1;
+			}
 		}
 	}
 	fn move_left(&mut self) {
-		self.shapes[self.cursor].x -= 1;
-		if self.clashes(&self.shapes[self.cursor]) {
-			self.shapes[self.cursor].x += 1;
+		if self.shapes[self.cursor].x > 0 {
+			self.shapes[self.cursor].x -= 1;
+			if self.clashes(&self.shapes[self.cursor]) {
+				self.shapes[self.cursor].x += 1;
+			}
 		}
 	}
-	fn move_down(&mut self) {
+	fn move_down(&mut self) -> bool {
 		self.shapes[self.cursor].y += 1;
 		if self.clashes(&self.shapes[self.cursor]) {
 			self.shapes[self.cursor].y -= 1;
-		}
+			self.shapes.push(make_shape());
+			self.cursor = self.shapes.len()-1;
+			false
+		} else { true }
 	}
 	fn draw(
 		&mut self,
@@ -140,6 +173,16 @@ impl Background {
 	fn draw(&mut self, gl: &mut GlGraphics) {
 		use graphics::*;
 		clear(self.colour, gl);
+	}
+}
+
+fn make_shape() -> Shape {
+	use rand::Rng;
+	let mut rng = rand::thread_rng();
+	if rng.gen() {
+		shape1(5, 0)
+	} else {
+		shape2(5, 0)
 	}
 }
 
@@ -216,7 +259,6 @@ fn main() {
 			cursor: 0,
 			shapes: vec![
 				cursor,
-				shape2(2, 10)
 			]
 		}
 	};
