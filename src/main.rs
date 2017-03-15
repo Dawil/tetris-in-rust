@@ -30,19 +30,19 @@ impl App {
 	fn user_input(&mut self, button: &Button) {
 		match *button {
 			Button::Keyboard(Key::Space) => {
-				self.grid.shapes[0].rotate();
+				self.grid.shapes[0].rotate()
 			}
 			Button::Keyboard(Key::Right) => {
-				self.grid.shapes[0].move_right();
+				self.grid.shapes[0].x += 1;
 			}
 			Button::Keyboard(Key::Left) => {
-				self.grid.shapes[0].move_left();
+				self.grid.shapes[0].x -= 1;
 			}
 		//	Button::Keyboard(Key::Up) => {
 		//		self.up_d = true;
 		//	}
 			Button::Keyboard(Key::Down) => {
-				self.grid.shapes[0].move_down();
+				self.grid.shapes[0].y += 1;
 			},
 			_ => {}
 		}
@@ -58,54 +58,17 @@ impl Cell {
 	fn dec_y(&mut self) { self.y -= 1; }
 }
 struct Shape {
-	cells: Vec<Cell>,
+	x: usize, y: usize,
+	cells: Vec<Vec<Cell>>,
+	orientation: usize,
 	colour: [f32; 4]
 }
 impl Shape {
-	fn top_left_cell(&self) -> Cell {
-		let mut x = 1000;
-		let mut y = 1000;
-		for cell in &self.cells {
-			if cell.x < x { x = cell.x; }
-			if cell.y < y { y = cell.y; }
-		}
-		Cell { x: x, y: y }
+	fn current_shape(&self) -> &Vec<Cell> {
+		&self.cells[self.orientation]
 	}
 	fn rotate(&mut self) {
-		let top_left_cell = self.top_left_cell();
-		for cell in &mut self.cells {
-			// transpose cell (matrix multiplcation)
-		}
-	}
-	fn move_left(&mut self) {
-		for cell in &mut self.cells {
-			cell.x -= 1;
-		}
-	}
-	fn move_right(&mut self) {
-		for cell in &mut self.cells {
-			cell.x += 1;
-		}
-	}
-	fn move_down(&mut self) {
-		for cell in &mut self.cells {
-			cell.y += 1;
-		}
-	}
-	fn draw(
-		&mut self,
-		c: graphics::Context,
-		gl: &mut GlGraphics,
-	) {
-		use graphics::*;
-		for cell in self.cells.iter() {
-			let square = rectangle::square(0.0, 0.0, 40.0);
-			let transform = c.transform.trans(
-				cell.x as f64,
-				cell.y as f64
-			);
-			rectangle(self.colour, square, transform, gl);
-		}
+		self.orientation = (self.orientation + 1) % self.cells.len();
 	}
 }
 struct Grid {
@@ -120,11 +83,12 @@ impl Grid {
 		use graphics::*;
 		for mut shape in &self.shapes {
 			//shape.draw(c, gl)
-			for cell in &shape.cells {
+			let current_shape = shape.current_shape();
+			for cell in current_shape {
 				let square = rectangle::square(0.0, 0.0, 40.0);
 				let transform = c.transform.trans(
-					(cell.x * 40) as f64,
-					(cell.y * 40) as f64
+					((shape.x + cell.x) * 40) as f64,
+					((shape.y + cell.y) * 40) as f64
 				);
 				rectangle(shape.colour, square, transform, gl);
 			}
@@ -155,11 +119,33 @@ fn main() {
 		grid: Grid {
 			shapes: vec![
 				Shape {
+					x: 0, y: 0,
+					orientation: 0,
 					cells: vec![
-						Cell { x: 0, y: 0 },
-						Cell { x: 1, y: 0 },
-						Cell { x: 2, y: 0 },
-						Cell { x: 1, y: 1 }
+						vec![
+							Cell { x: 0, y: 1 },
+							Cell { x: 1, y: 1 },
+							Cell { x: 2, y: 1 },
+							Cell { x: 1, y: 2 }
+						],
+						vec![
+							Cell { x: 1, y: 0 },
+							Cell { x: 0, y: 1 },
+							Cell { x: 1, y: 1 },
+							Cell { x: 1, y: 2 }
+						],
+						vec![
+							Cell { x: 0, y: 1 },
+							Cell { x: 1, y: 1 },
+							Cell { x: 1, y: 0 },
+							Cell { x: 2, y: 1 }
+						],
+						vec![
+							Cell { x: 1, y: 0 },
+							Cell { x: 1, y: 1 },
+							Cell { x: 2, y: 1 },
+							Cell { x: 1, y: 2 }
+						]
 					],
 					colour: [1.0, 0.0, 0.0, 1.0]
 				}
