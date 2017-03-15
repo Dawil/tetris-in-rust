@@ -30,19 +30,16 @@ impl App {
 	fn user_input(&mut self, button: &Button) {
 		match *button {
 			Button::Keyboard(Key::Space) => {
-				self.grid.shapes[0].rotate()
+				self.grid.rotate_cursor()
 			}
 			Button::Keyboard(Key::Right) => {
-				self.grid.shapes[0].x += 1;
+				self.grid.move_right();
 			}
 			Button::Keyboard(Key::Left) => {
-				self.grid.shapes[0].x -= 1;
+				self.grid.move_left();
 			}
-		//	Button::Keyboard(Key::Up) => {
-		//		self.up_d = true;
-		//	}
 			Button::Keyboard(Key::Down) => {
-				self.grid.shapes[0].y += 1;
+				self.grid.move_down();
 			},
 			_ => {}
 		}
@@ -54,9 +51,6 @@ struct Background {
 	colour: [f32; 4]
 }
 struct Cell { x: usize, y: usize }
-impl Cell {
-	fn dec_y(&mut self) { self.y -= 1; }
-}
 struct Shape {
 	x: usize, y: usize,
 	cells: Vec<Vec<Cell>>,
@@ -70,11 +64,44 @@ impl Shape {
 	fn rotate(&mut self) {
 		self.orientation = (self.orientation + 1) % self.cells.len();
 	}
+	fn collides(&self, shape: &Shape) -> bool {
+		let current_shape = self.current_shape();
+		let other_current_shape = shape.current_shape();
+		for cell in current_shape {
+			for other_cell in other_current_shape {
+				if cell.x == other_cell.x && cell.y == other_cell.y {
+					return true
+				}
+			}
+		}
+		false
+	}
 }
 struct Grid {
+	cursor: usize,
 	shapes: Vec<Shape>
 }
 impl Grid {
+	fn rotate_cursor(&mut self) {
+		self.shapes[self.cursor].rotate()
+	}
+	fn clashes(&self, shape: Shape) -> bool {
+		for other_shape in &self.shapes {
+			if shape.collides(&other_shape) {
+				return true
+			}
+		}
+		false
+	}
+	fn move_right(&mut self) {
+		self.shapes[self.cursor].x += 1;
+	}
+	fn move_left(&mut self) {
+		self.shapes[self.cursor].x -= 1;
+	}
+	fn move_down(&mut self) {
+		self.shapes[self.cursor].y += 1;
+	}
 	fn draw(
 		&mut self,
 		c: graphics::Context,
@@ -103,6 +130,61 @@ impl Background {
 	}
 }
 
+fn shape1(x: usize, y: usize) -> Shape {
+	Shape {
+		x: x, y: y,
+		orientation: 0,
+		cells: vec![
+			vec![
+				Cell { x: 0, y: 1 },
+				Cell { x: 1, y: 1 },
+				Cell { x: 2, y: 1 },
+				Cell { x: 1, y: 2 }
+			],
+			vec![
+				Cell { x: 1, y: 0 },
+				Cell { x: 0, y: 1 },
+				Cell { x: 1, y: 1 },
+				Cell { x: 1, y: 2 }
+			],
+			vec![
+				Cell { x: 0, y: 1 },
+				Cell { x: 1, y: 1 },
+				Cell { x: 1, y: 0 },
+				Cell { x: 2, y: 1 }
+			],
+			vec![
+				Cell { x: 1, y: 0 },
+				Cell { x: 1, y: 1 },
+				Cell { x: 2, y: 1 },
+				Cell { x: 1, y: 2 }
+			]
+		],
+		colour: [1.0, 0.0, 0.0, 1.0]
+	}
+}
+fn shape2(x: usize, y: usize) -> Shape {
+	Shape {
+		x: x, y: y,
+		orientation: 0,
+		cells: vec![
+			vec![
+				Cell { x: 0, y: 0 },
+				Cell { x: 1, y: 0 },
+				Cell { x: 1, y: 1 },
+				Cell { x: 2, y: 1 }
+			],
+			vec![
+				Cell { x: 2, y: 0 },
+				Cell { x: 1, y: 1 },
+				Cell { x: 2, y: 1 },
+				Cell { x: 1, y: 2 }
+			],
+		],
+		colour: [0.0, 0.0, 1.0, 1.0]
+	}
+}
+
 fn main() {
 	let opengl = OpenGL::V3_2;
 
@@ -113,42 +195,15 @@ fn main() {
 	.build()
 	.unwrap();
 
+	let cursor = shape1(5,0);
 	let mut app = App {
 		gl: GlGraphics::new(opengl),
 		background: Background { colour: [0.0, 1.0, 0.0, 1.0] },
 		grid: Grid {
+			cursor: 0,
 			shapes: vec![
-				Shape {
-					x: 0, y: 0,
-					orientation: 0,
-					cells: vec![
-						vec![
-							Cell { x: 0, y: 1 },
-							Cell { x: 1, y: 1 },
-							Cell { x: 2, y: 1 },
-							Cell { x: 1, y: 2 }
-						],
-						vec![
-							Cell { x: 1, y: 0 },
-							Cell { x: 0, y: 1 },
-							Cell { x: 1, y: 1 },
-							Cell { x: 1, y: 2 }
-						],
-						vec![
-							Cell { x: 0, y: 1 },
-							Cell { x: 1, y: 1 },
-							Cell { x: 1, y: 0 },
-							Cell { x: 2, y: 1 }
-						],
-						vec![
-							Cell { x: 1, y: 0 },
-							Cell { x: 1, y: 1 },
-							Cell { x: 2, y: 1 },
-							Cell { x: 1, y: 2 }
-						]
-					],
-					colour: [1.0, 0.0, 0.0, 1.0]
-				}
+				cursor,
+				shape2(2, 10)
 			]
 		}
 	};
