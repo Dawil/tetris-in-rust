@@ -143,10 +143,13 @@ impl Grid {
 		self.shapes[self.cursor].y += 1;
 		if self.clashes(&self.shapes[self.cursor]) {
 			self.shapes[self.cursor].y -= 1;
-			self.shapes.push(make_shape());
-			self.cursor = self.shapes.len()-1;
+			self.handle_placed();
 			false
 		} else { true }
+	}
+	fn handle_placed(&mut self) {
+		self.shapes.push(make_shape());
+		self.cursor = self.shapes.len()-1;
 	}
 	fn draw(
 		&mut self,
