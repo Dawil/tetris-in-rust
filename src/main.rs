@@ -314,11 +314,17 @@ fn main() {
 	};
 
 	let mut events = window.events();
+	let mut timer = 0.0;
 	while let Some(e) = events.next(&mut window) {
 		if let Some(r) = e.render_args() {
 			app.render(&r);
 		}
 		if let Some(u) = e.update_args() {
+			let new_time = (timer + 4.0*u.dt) % 1.0;
+			if new_time < timer {
+				app.grid.move_down();
+			}
+			timer = new_time;
 			app.update(&u);
 		}
 		if let Some(p) = e.press_args() {
