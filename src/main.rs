@@ -72,10 +72,22 @@ impl Shape {
 		self.orientation = (self.orientation + 1) % self.cells.len();
 	}
 	fn remove_row(&mut self, row: u32) {
-		println!("remove row {}", row);
+		println!("Remove row from shape");
 		// remove cells
-		
+		let mut removed_any;
+		loop {
+			removed_any = false;
+			for i in 0..self.current_shape().len() {
+				if self.current_shape()[i].y + self.y == row {
+					self.cells[self.orientation].remove(i);
+					removed_any = true;
+					break;
+				}
+			}
+			if !removed_any { break; }
+		}
 		// lower all cells above row
+		self.y += 1;
 	}
 	fn lowest_y(&self) -> u32 {
 		let mut y = 0;
@@ -164,7 +176,7 @@ impl Grid {
 	}
 	fn get_row_if_full(&mut self) -> Option<u32> {
 		for j in 0..DEPTH+1 {
-			//print!("{} ", j);
+			print!("{} ", j);
 			let mut row_full = true;
 			for i in 0..WIDTH+3 {
 				let mut cell_full = false;
@@ -176,10 +188,10 @@ impl Grid {
 						}
 					}
 				}
-				//print!("{} ", if cell_full { "X" } else { "_" });
+				print!("{} ", if cell_full { "X" } else { "_" });
 				row_full = row_full && cell_full;
 			}
-			//println!("");
+			println!("");
 			if row_full {
 				return Some(j);
 			}
