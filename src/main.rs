@@ -71,6 +71,9 @@ impl Shape {
 	fn rotate(&mut self) {
 		self.orientation = (self.orientation + 1) % self.cells.len();
 	}
+	fn remove_row(&mut self, row: usize) {
+		println!("remove row {}", row);
+	}
 	fn lowest_y(&self) -> usize {
 		let mut y = 0;
 		for cell in self.current_shape() {
@@ -150,6 +153,33 @@ impl Grid {
 	fn handle_placed(&mut self) {
 		self.shapes.push(make_shape());
 		self.cursor = self.shapes.len()-1;
+		if let Some(mut row) = self.get_row_if_full() {
+			for shape in &mut self.shapes {
+				shape.remove_row(row);
+			}
+		}
+	}
+	fn get_row_if_full(&mut self) -> Option<usize> {
+		for i in 0..DEPTH {
+			let mut row_full = true;
+			for j in 0..WIDTH-2 {
+				let mut cell_full = false;
+				for shape in &self.shapes {
+					for cell in shape.current_shape() {
+						if shape.x + cell.x == j && shape.y + cell.y == i {
+							cell_full = true;
+							break;
+						}
+					}
+				}
+				row_full = row_full && cell_full;
+			}
+			if row_full {
+				println!("row full {}", i);
+				return Some(i);
+			}
+		}
+		None
 	}
 	fn draw(
 		&mut self,
