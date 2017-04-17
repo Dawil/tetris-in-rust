@@ -12,8 +12,8 @@ use piston::input::*;
 use glutin_window::GlutinWindow as Window;
 use opengl_graphics::{ GlGraphics, OpenGL };
 
-static DEPTH:usize = 21;
-static WIDTH:usize = 15;
+static DEPTH:u32 = 21;
+static WIDTH:u32 = 15;
 
 struct App {
 	gl: GlGraphics,
@@ -57,9 +57,9 @@ impl App {
 struct Background {
 	colour: [f32; 4]
 }
-struct Cell { x: usize, y: usize }
+struct Cell { x: u32, y: u32 }
 struct Shape {
-	x: usize, y: usize,
+	x: u32, y: u32,
 	cells: Vec<Vec<Cell>>,
 	orientation: usize,
 	colour: [f32; 4]
@@ -71,10 +71,13 @@ impl Shape {
 	fn rotate(&mut self) {
 		self.orientation = (self.orientation + 1) % self.cells.len();
 	}
-	fn remove_row(&mut self, row: usize) {
+	fn remove_row(&mut self, row: u32) {
 		println!("remove row {}", row);
+		// remove cells
+		
+		// lower all cells above row
 	}
-	fn lowest_y(&self) -> usize {
+	fn lowest_y(&self) -> u32 {
 		let mut y = 0;
 		for cell in self.current_shape() {
 			if cell.y > y {
@@ -159,24 +162,26 @@ impl Grid {
 			}
 		}
 	}
-	fn get_row_if_full(&mut self) -> Option<usize> {
-		for i in 0..DEPTH {
+	fn get_row_if_full(&mut self) -> Option<u32> {
+		for j in 0..DEPTH+1 {
+			//print!("{} ", j);
 			let mut row_full = true;
-			for j in 0..WIDTH-2 {
+			for i in 0..WIDTH+3 {
 				let mut cell_full = false;
 				for shape in &self.shapes {
 					for cell in shape.current_shape() {
-						if shape.x + cell.x == j && shape.y + cell.y == i {
+						if shape.x + cell.x == i && shape.y + cell.y == j {
 							cell_full = true;
 							break;
 						}
 					}
 				}
+				//print!("{} ", if cell_full { "X" } else { "_" });
 				row_full = row_full && cell_full;
 			}
+			//println!("");
 			if row_full {
-				println!("row full {}", i);
-				return Some(i);
+				return Some(j);
 			}
 		}
 		None
@@ -219,7 +224,7 @@ fn make_shape() -> Shape {
 	}
 }
 
-fn shape1(x: usize, y: usize) -> Shape {
+fn shape1(x: u32, y: u32) -> Shape {
 	Shape {
 		x: x, y: y,
 		orientation: 0,
@@ -252,7 +257,7 @@ fn shape1(x: usize, y: usize) -> Shape {
 		colour: [1.0, 0.0, 0.0, 1.0]
 	}
 }
-fn shape2(x: usize, y: usize) -> Shape {
+fn shape2(x: u32, y: u32) -> Shape {
 	Shape {
 		x: x, y: y,
 		orientation: 0,
